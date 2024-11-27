@@ -45,8 +45,8 @@ complex_coefs_count=complex_coefs_count(1);
 complex_C_count=double(length(complex_C_pairs));
 complex_M_count=double(length(complex_M_pairs));
 
-%loop over al SN from 2 to d
-for k=2:d
+%loop over al SN from 2 to d-1
+for k=2:d-1
 
     %clear yalmip memory at each iteration
     yalmip('clear')
@@ -86,7 +86,7 @@ for k=2:d
     %     F=[F, sigma3(:,:,i)>=0];
     % end
 
-    % the assemblage is fixed as coming from MUB measurements on the maximally entangled state
+    % the assemblage is fixed as the result of SICs measurements on the noisy maximally entangled state
     for j=1:N
         F=[F, sigma(:,:,j) == PartialTrace((rho*v+(1-v)*eye(d^2)/d^2)*Tensor(A{1,j}.', eye(d)),1)];
     end
