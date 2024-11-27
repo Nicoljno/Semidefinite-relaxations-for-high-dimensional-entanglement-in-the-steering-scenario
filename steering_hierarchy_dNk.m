@@ -51,7 +51,7 @@ complex_C_count=double(length(complex_C_pairs));
 complex_M_count=double(length(complex_M_pairs));
 
 
-for k=2:2
+for k=2:d-1
     yalmip('clear')
     rho_B=sdpvar(d,d, 'hermitian', 'complex');
     sigma=sdpvar(d,d, sdp_mat_count-1, 'hermitian', 'complex');
