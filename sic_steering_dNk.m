@@ -2,8 +2,8 @@ clear all
 clc
 
 
-%%% CHANGE D, N, K WHEN
-%%% TESTING DIFFERENT SCENARIOS
+% dimension d, number of measurements N and Schmidt number to test k
+
 d=3;
 N=9;
 k=2;
@@ -11,7 +11,7 @@ data_=[];
 rho=MaxEntangled(d);
 rho=rho*rho';
 
-
+% definition of the sic POVMs, change the generator v when needed
 v=[+.78867513459481288225457439025097872782e+0+.00000000000000000000000000000000000000e+0i;
 +.28867513459481288225457439025097872782e+0-.50000000000000000000000000000000000000e+0i;
 +.10566243270259355887271280487451063608e+0-.18301270189221932338186158537646809173e+0i;];
@@ -30,26 +30,8 @@ for i=1:d
     end
 end
 
-%%%PAULI STRINGS DEFINITION
-% S{1,1}=Pauli('x');
-% S{1,2}=Pauli('y');
-% S{1,3}=Pauli('z');
-% n=2;
-% N=2*n+1;
-% id=1;
-% for i=1:n-1
-%     for j=1:2*i+1
-%         S{i+1,j}=Tensor(S{i,j}, S{1,1});
-%     end
-%     id=Tensor(id, eye(2));
-%     S{i+1, j+1}=Tensor(id, S{1,2});
-%     S{i+1, j+2}=Tensor(id, S{1,3});
-% end
-% for i=1:N
-%     A{1,i}=(eye(d)-S{n,i})/2;
-% end
 
-
+%loading constraints obtained from steering_hierarchy_constraints_2_out_simple.ipynb
 load('sic_d3_lvl_2.mat');
 sdp_mat_count=size(sdp_matrices);
 dim_gamma=sdp_mat_count(2);
@@ -63,41 +45,53 @@ complex_coefs_count=complex_coefs_count(1);
 complex_C_count=double(length(complex_C_pairs));
 complex_M_count=double(length(complex_M_pairs));
 
-
+%loop over al SN from 2 to d
 for k=2:d
+
+    %clear yalmip memory at each iteration
     yalmip('clear')
+
+    %definition of the variables:
+    %reduced density matrix rho_B; assemblage sigma; complex matrices not_sigma; real and complex scalars c, cc; visibility v.  
+
     rho_B=sdpvar(d,d, 'hermitian', 'complex');
     sigma=sdpvar(d,d, sdp_mat_count-1, 'hermitian', 'complex');
-    % sigma3=sdpvar(d,d, N, 'hermitian', 'complex');
     not_sigma=sdpvar(d,d, complex_mat_count, 'full', 'complex');
-    
     c=sdpvar(coefs_count, 1, 'full', 'real');
     cc=sdpvar(complex_coefs_count, 1, 'full', 'complex');
     v=sdpvar(1);
     
+    % normalization is not needed if we fix the assemblage
+    % sigma3=sdpvar(d,d, N, 'hermitian', 'complex');
+    
+    
     F=[];
-    
-    
     F=[F, v<=1];
     
-    
+    %fixing the reduced desity matrix to I/d
     F=[F, rho_B==PartialTrace(rho*v+(1-v)*eye(d^2)/d^2,1)];
+
+    %variables related by complex conjugate operation
     for i=1:complex_C_count
         F=[F, cc(complex_C_pairs(i,1)+1)==cc(complex_C_pairs(i,2)+1)'];
     end
+    %variables related by hermitian conjugate operation
     for i=1:complex_M_count
         F=[F, not_sigma(:,:,complex_M_pairs(i,1)+1)==not_sigma(:,:,complex_M_pairs(i,2)+1)'];
     end
-    
+
+    % not needed if we fix the assemblage
     % for i=1:N
     %     F=[F, sigma3(:,:,i)==rho_B - sigma(:,:,i)];
     %     F=[F, sigma3(:,:,i)>=0];
     % end
-    
+
+    % the assemblage is fixed as coming from MUB measurements on the maximally entangled state
     for j=1:N
         F=[F, sigma(:,:,j) == PartialTrace((rho*v+(1-v)*eye(d^2)/d^2)*Tensor(A{1,j}.', eye(d)),1)];
     end
-    
+
+    %variables equal under full trace
     trace_pair=size(tracial_pairs);
     trace_pair=trace_pair(1);
     for i=1:trace_pair
@@ -115,10 +109,11 @@ for k=2:d
         end
     end
     
-    
+    % redundant if rho_B is fixed
     F=[F, trace(rho_B)==1];
     F=[F, rho_B>=0];
-    
+
+    % definition of Gamma
     Gamma=zeros(dim_gamma*d, dim_gamma*d);
     M=sparse(1, 1, 1, dim_gamma, dim_gamma);
     Gamma=Gamma+Tensor(M, k*eye(d));
@@ -179,9 +174,11 @@ for k=2:d
             end
         end
     end
+
+    % when the assemblage is fixed we optimise over v, if not the witness has to be defined
     
     obj=v;
-    
+
     % obj=trace(A{1,1}*sigma(:,:,1)+A{2,1}*sigma3(:,:,1)+...
     %           A{1,2}*sigma(:,:,2)+A{2,2}*sigma3(:,:,2)+...
     %           A{1,3}*sigma(:,:,3)+A{2,3}*sigma3(:,:,3)+...
