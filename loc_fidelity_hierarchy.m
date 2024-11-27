@@ -1,14 +1,21 @@
 clear all
 clc
 
+
+%define dimension d and number of measurements N, the initial fidelity is 1/d
+
 d=3;
 N=3;
 f_0=1/d;
+
+
+%define the steps of the for loop and the delta to increase the fidelity at each step
+
 N_count=10;
 delta_f=(1-1/d)/N_count;
 data_=[];
 
-
+%load the data saved from loc_fidelity_hierarchy_constraints_2.ipynb
 load('loc_fidelity_d3_N3_lvl_2.mat');
 for opt_count=1:1;
     f=f_0+(delta_f*(opt_count-1));
