@@ -17,9 +17,9 @@ data_=[];
 
 %load the data saved from loc_fidelity_hierarchy_constraints_2.ipynb
 load('loc_fidelity_d3_N3_lvl_2.mat');
-for opt_count=1:1;
+
+for opt_count=1:N_count
     f=f_0+(delta_f*(opt_count-1));
-    f=0.5;
     sdp_mat_count=double(var_num(2));
     dim_gamma_rho_y=size(sdp_matrices_y);
     dim_gamma_rho_y=dim_gamma_rho_y(2);
@@ -28,16 +28,19 @@ for opt_count=1:1;
     complex_coefs_count=double(var_num(3));
     complex_C_count=double(length(complex_C_pairs));
     complex_M_count=double(length(complex_M_pairs));
+
+    %variables definition:
+    %reduced density matrix rho_B, assemblages sigma, normalization of the assemblages sigma3, complex matrix variables sigma_3;
+    %real valued scalars c, complex valued scalars c3
     
     rho_B=sdpvar(d,d, 'hermitian', 'complex');
     sigma=sdpvar(d,d, sdp_mat_count-1, 'hermitian', 'complex');
     sigma3=sdpvar(d,d,N,'hermitian','complex');
     not_sigma=sdpvar(d,d, complex_mat_count, 'full', 'complex');
-    
-    var_count=1;
-    
     c=sdpvar(coefs_count, 1, 'full', 'real');
     cc=sdpvar(complex_coefs_count, 1, 'full', 'complex');
+     
+    var_count=1;
     
     F=[];
     
@@ -45,14 +48,17 @@ for opt_count=1:1;
     F=[F, trace(rho_B)==1];
     F=[F, rho_B>=0];
 
+    %variables related by the complex conjugate operation
     for i=1:complex_C_count
         F=[F, cc(complex_C_pairs(i,1)+1)==cc(complex_C_pairs(i,2)+1)'];
     end
 
+    %variables related by the hermitian conjugate operation
     for i=1:complex_M_count
         F=[F, not_sigma(:,:,complex_M_pairs(i,1)+1)==not_sigma(:,:,complex_M_pairs(i,2)+1)'];
     end
 
+    %variables equal under trace operation
     trace_pair=size(tracial_pairs);
     trace_pair=trace_pair(1);
     for i=1:trace_pair
@@ -70,7 +76,7 @@ for opt_count=1:1;
         end
     end
 
-    %NO SIGNALING ON SIGMA
+    %NO SIGNALING ON SIGMA, THE CONDITION HAS TO BE CHANGED TO RESPECT THE NUMBER OF OUTCOMES
     for i=1:N
         F=[F, sigma3(:,:,i) == rho_B - sigma(:,:,i) - sigma(:,:,i+N)];%
         F=[F, sigma3(:,:,i) >= 0];
@@ -82,7 +88,8 @@ for opt_count=1:1;
     %     F=[F, sigma3(:,:,i) >= 0];
     %     F=[F, c3(i)==f*d-c(i+1)];
     % end
-    
+
+    %definition of the block matrices
     Gamma_rho=zeros(dim_gamma_rho_y*d, dim_gamma_rho_y*d);
     Gamma_y=zeros(dim_gamma_rho_y*d, dim_gamma_rho_y*d);
     
@@ -173,15 +180,18 @@ for opt_count=1:1;
         end
     end
 
+    %fidelity constraint
     F=[F, c(1)==f*d];
 
     
     Gamma_rho_y=Gamma_y+Gamma_rho;
     
+    %semidefinite positiveness constraint
     F=[F, Gamma_rho<=0];
     F=[F, Gamma_rho_y>=0];
     
 
+    %definition of the objective
     P=GenPauli(1,0,d);
     [a,b_x]=eig(P);
     for i=1:d
