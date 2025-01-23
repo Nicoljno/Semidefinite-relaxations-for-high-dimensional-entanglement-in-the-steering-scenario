@@ -7,7 +7,7 @@ Repository containing the codes used in the paper "Semidefinite relaxations for 
 
 - **sic_steering_dNk.m**: Code used to compute the critical visibilities for the n-preparability of SIC assemblages when the measurements on Alice's side are projective. 
 
-- **sic_steering_dNk.m**: Code used to compute the critical visibilities for the n-preparability of SIC assemblages in the case of non-projective measurements.
+- **sic_steering_dNk_POVM.m**: Code used to compute the critical visibilities for the n-preparability of SIC assemblages in the case of non-projective measurements.
 
 - **loc_fidelity_hierarchy.m**: Code used to solve the SDP relaxation for entanglement fidelity
 
